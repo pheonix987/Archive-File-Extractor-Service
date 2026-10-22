@@ -1,6 +1,4 @@
-import io
-import zipfile
-import time
+import io, zipfile, time, pytest
 
 
 def test_complete_extraction_flow(client):
@@ -37,10 +35,7 @@ def test_complete_extraction_flow(client):
         f"/extractions/{job_id}"
     )
 
-    assert (
-        status_response.get_json()["status"]
-        == "completed"
-    )
+    assert status_response.get_json()["status"] == "completed"
 
     results_response = client.get(
         f"/extractions/{job_id}/results"
@@ -54,3 +49,7 @@ def test_complete_extraction_flow(client):
         data["results"][0]["file_name"]
         == "config.json"
     )
+
+def test_extraction_failure(client):
+    response = client.get("/extractions/123/results")
+    assert response.json == {"error": "Job not found"}, 404

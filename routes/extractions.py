@@ -17,9 +17,6 @@ extractions_bp = Blueprint("extractions_routes", __name__)
 
 executor = ThreadPoolExecutor(max_workers=Config.CONCURRENCY)
 
-
-
-
 @extractions_bp.post("/extractions")
 def post_extraction():
 

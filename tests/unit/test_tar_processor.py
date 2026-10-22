@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 from services.tar_processor import process_tar
-import io
+import io, tarfile
 
 @patch("services.tar_processor.tarfile.open")
 def test_process_tar_empty_archive(mock_tarfile_open):
@@ -17,17 +17,6 @@ def test_process_tar_empty_archive(mock_tarfile_open):
     )
 
     assert response == []
-
-@patch("services.tar_processor.process_tar")
-def test_process_archive_routes_to_tgz(
-    mock_process_tar
-):
-
-    fake_file = io.BytesIO(b"")
-
-    mock_process_tar.return_value = [
-        {"full_path": "config.json"}
-    ]
 
     
 @patch("services.tar_processor.tarfile.open")
@@ -137,3 +126,27 @@ def test_process_tar_nested_archive(
             "full_path": "inner.zip/data.json"
         }
     ]
+
+@patch("services.tar_processor.tarfile.open")
+def test_process_tar_skips_directory(mock_tarfile_open):
+
+    mock_tar = MagicMock()
+
+    member = MagicMock()
+    member.isfile.return_value = False
+
+    mock_tar.getmembers.return_value = [member]
+
+    mock_tar.__enter__.return_value = mock_tar
+    mock_tar.__exit__.return_value = None
+
+    mock_tarfile_open.return_value = mock_tar
+
+    result = process_tar(
+        io.BytesIO(b""),
+        "*.json"
+    )
+
+    member.isfile.assert_called_once()
+
+    assert result == []

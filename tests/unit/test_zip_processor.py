@@ -43,3 +43,53 @@ def test_nested_zip(tmp_path):
     )
 
     assert len(matches) == 1
+
+@patch("services.zip_processor.zipfile.ZipFile")
+def test_process_zip_skips_directory(mock_zipfile):
+    mock_zip = MagicMock()
+
+    entry = MagicMock()
+    entry.is_dir.return_value = True
+
+    mock_zip.infolist.return_value = [entry]
+
+    mock_zipfile.return_value.__enter__.return_value = mock_zip
+
+    result = process_zip(
+        io.BytesIO(b""),
+        "*.json"
+    )
+
+    assert result == []
+
+    entry.is_dir.assert_called_once()
+
+@patch("services.zip_processor.is_archive")
+@patch("services.zip_processor.zipfile.ZipFile")
+def test_process_zip_handles_nested_archive_error(
+    mock_zipfile,
+    mock_is_archive
+):
+    mock_zip = MagicMock()
+
+    entry = MagicMock()
+    entry.is_dir.return_value = False
+    entry.filename = "nested.zip"
+    entry.file_size = 100
+
+    mock_zip.infolist.return_value = [entry]
+
+    mock_zip.read.side_effect = Exception(
+        "Unable to read archive"
+    )
+
+    mock_zipfile.return_value.__enter__.return_value = mock_zip
+
+    mock_is_archive.return_value = True
+
+    result = process_zip(
+        io.BytesIO(b""),
+        "*.json"
+    )
+
+    assert result == []

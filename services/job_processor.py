@@ -2,6 +2,7 @@ from config.db import db
 from services.archive_processor import process_archive
 from models.job import Job
 from models.extracted_file import ExtractedFile
+import os
 
 def process_job(app, job_id, archive_path, archive_name, pattern):
     with app.app_context():
@@ -45,3 +46,7 @@ def process_job(app, job_id, archive_path, archive_name, pattern):
                 job.error = str(e)
 
                 db.session.commit()
+
+        finally:
+            if os.path.exists(archive_path):
+                os.remove(archive_path)
